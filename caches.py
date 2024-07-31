@@ -6,9 +6,9 @@ import pyarrow as pa
 from deltalake import DeltaTable
 
 
-class ArrowDeltaSimpleCache:
+class ArrowSimpleCache:
     """
-    ArrowDeltaSimpleCache is a simple in-memory cache for DeltaTables.
+    ArrowSimpleCache is a simple in-memory cache for DeltaTables.
     It uses DuckDB as the query engine to execute SQL queries on the cached
     DeltaTable. The cache is updated whenever a new version of the DeltaTable
     is available. It is designed to be used with a single DeltaTable, and it
