@@ -12,9 +12,7 @@ class ArrowDeltaSimpleCache:
     It uses DuckDB as the query engine to execute SQL queries on the cached
     DeltaTable. The cache is updated whenever a new version of the DeltaTable
     is available. It is designed to be used with a single DeltaTable, and it
-    caches the entire DeltaTable as a pyarrow Table. For each query, it
-    executes the query on the cached DeltaTable and returns the result as a
-    pyarrow Table.
+    caches the entire DeltaTable as a pyarrow Table.
 
     **It must be initialized after the construction.**
 
@@ -100,8 +98,12 @@ class ArrowDeltaSimpleCache:
         self.__logger.log(logging.INFO, "Cache initialized successfully.")
 
     def clear(self) -> None:
+        """
+        Clears the cache.
+        """
         self.__logger.log(logging.INFO, "Clearing the cache...")
         self.__cached_table = None
+        self.__con.unregister("pa_table")
         self.__logger.log(logging.INFO, "Cache cleared.")
 
     def refresh(self) -> None:
