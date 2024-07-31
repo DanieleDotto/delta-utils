@@ -1,0 +1,5 @@
+deltalake==0.18.2
+pyarrow==17.0.0
+pandas==2.2.2
+duckdb==1.0.0
+jsonschema==4.23.0
