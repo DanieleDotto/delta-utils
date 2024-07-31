@@ -6,12 +6,17 @@ import pyarrow as pa
 from deltalake import DeltaTable
 
 
-class ArrowDeltaCache:
+class ArrowDeltaSimpleCache:
     """
-    ArrowDeltaCache is a simple in-memory cache for DeltaTables.
+    ArrowDeltaSimpleCache is a simple in-memory cache for DeltaTables.
     It uses DuckDB as the query engine to execute SQL queries on the cached
     DeltaTable. The cache is updated whenever a new version of the DeltaTable
-    is available. **It must be initialized after the construction.**
+    is available. It is designed to be used with a single DeltaTable, and it
+    caches the entire DeltaTable as a pyarrow Table. For each query, it
+    executes the query on the cached DeltaTable and returns the result as a
+    pyarrow Table.
+
+    **It must be initialized after the construction.**
 
     Parameters
     ----------
@@ -31,11 +36,15 @@ class ArrowDeltaCache:
     -------
     init()
         Initializes the cache.
-    clear_cache()
+    clear()
         Clears the cache.
-    query_pa_table(query) -> pa.Table
-        Executes a SQL query on the cached DeltaTable and returns the result
-        as a pyarrow Table.
+    refresh()
+        Refreshes the cache. If a new version of the DeltaTable is available,
+        it updates the cache.
+    query(query) -> pa.Table
+        Executes the query on the cached DeltaTable and returns the result as
+        a pyarrow Table. If a new version of the DeltaTable is available, it
+        updates the cache before executing the query.
     """
     def __init__(self, deltatable: DeltaTable, logger: Logger):
         self.__logger = logger
@@ -78,8 +87,6 @@ class ArrowDeltaCache:
         """
         The cached DeltaTable as a pyarrow Table.
         """
-        if self.__check_new_version_available():
-            self.__update_table_cache()
         self.__logger.log(logging.INFO, "Retrieving the cached deltatable...")
         return self.__cached_table
 
@@ -89,16 +96,29 @@ class ArrowDeltaCache:
         It must be called after the construction.
         """
         self.__logger.log(logging.INFO, "Initializing the cache...")
-        if self.__check_new_version_available():
-            self.__update_table_cache()
+        self.refresh()
         self.__logger.log(logging.INFO, "Cache initialized successfully.")
 
-    def clear_cache(self) -> None:
+    def clear(self) -> None:
         self.__logger.log(logging.INFO, "Clearing the cache...")
         self.__cached_table = None
         self.__logger.log(logging.INFO, "Cache cleared.")
 
-    def query_pa_table(self, query: str) -> pa.Table:
+    def refresh(self) -> None:
+        """
+        Refreshes the cache.
+        If a new version of the DeltaTable is available, it updates the cache.
+        """
+        if self.__check_new_version_available():
+            self.__update_table_cache()
+
+    def query(self, query: str) -> pa.Table:
+        """
+        Executes the query on the cached DeltaTable and returns the result as
+        a pyarrow Table. If a new version of the DeltaTable is available, it
+        updates the cache before executing the query.
+        """
+        self.refresh()
         self.__logger.log(logging.INFO, f"Executing query: {query}")
         arrow_res = self.__con.execute(query).fetch_arrow_table()
         return arrow_res
